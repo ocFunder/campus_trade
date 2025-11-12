@@ -1,5 +1,6 @@
 package com.campus.trade.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "reviews")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @NamedEntityGraph(
     name = "Review.withDetails",
     attributeNodes = {

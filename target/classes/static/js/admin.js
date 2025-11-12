@@ -3,14 +3,17 @@ let adminCurrentUser = null;
 let currentPage = {
     users: 0,
     products: 0,
-    orders: 0
+    orders: 0,
+    reviews: 0
 };
+let currentReviewId = null;
 
 // 确保函数在全局作用域中可用
 window.showDashboard = showDashboard;
 window.showUsers = showUsers;
 window.showProducts = showProducts;
 window.showOrders = showOrders;
+window.showReviews = showReviews;
 window.showSystem = showSystem;
 window.showSystemSettings = showSystemSettings;
 
@@ -143,6 +146,15 @@ function showOrders() {
     loadOrders();
 }
 
+// 显示评价管理
+function showReviews() {
+    console.log('showReviews called');
+    hideAllSections();
+    document.getElementById('reviews').style.display = 'block';
+    updateActiveNav('reviews');
+    loadReviews();
+}
+
 // 显示系统统计
 function showSystem() {
     console.log('showSystem called');
@@ -154,7 +166,7 @@ function showSystem() {
 
 // 隐藏所有内容区域
 function hideAllSections() {
-    const sections = ['dashboard', 'users', 'products', 'orders', 'system'];
+    const sections = ['dashboard', 'users', 'products', 'orders', 'reviews', 'system'];
     sections.forEach(section => {
         document.getElementById(section).style.display = 'none';
     });
@@ -173,7 +185,8 @@ function updateActiveNav(activeSection) {
         'users': 1,
         'products': 2,
         'orders': 3,
-        'system': 4
+        'reviews': 4,
+        'system': 5
     };
     
     if (sectionMap[activeSection] !== undefined) {
@@ -1060,6 +1073,216 @@ function showWarningMessage(message) {
 // 显示信息消息
 function showInfoMessage(message) {
     showNotification(message, 'info', 'fas fa-info-circle');
+}
+
+// 加载评价列表
+async function loadReviews(page = 0) {
+    try {
+        const typeFilter = document.getElementById('reviewTypeFilter')?.value || '';
+        const ratingFilter = document.getElementById('reviewRatingFilter')?.value || '';
+        
+        let url = `/api/admin/reviews?page=${page}&size=20`;
+        if (typeFilter) {
+            url = `/api/admin/reviews/type/${typeFilter}?page=${page}&size=20`;
+        } else if (ratingFilter) {
+            url = `/api/admin/reviews/rating/${ratingFilter}?page=${page}&size=20`;
+        }
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const reviews = result.data;
+            
+            displayReviews(reviews.content);
+            updatePagination('reviews', reviews, page);
+            currentPage.reviews = page;
+        } else {
+            console.error('加载评价列表失败');
+        }
+    } catch (error) {
+        console.error('加载评价列表失败:', error);
+    }
+}
+
+// 显示评价列表
+function displayReviews(reviews) {
+    const tbody = document.getElementById('reviewsTableBody');
+    tbody.innerHTML = '';
+    
+    reviews.forEach(review => {
+        const row = document.createElement('tr');
+        const order = review.order || {};
+        const product = order.product || {};
+        const reviewer = review.reviewer || {};
+        const reviewee = review.reviewee || {};
+        
+        // 生成星级显示
+        let stars = '';
+        for (let i = 0; i < 5; i++) {
+            if (i < review.rating) {
+                stars += '<i class="fas fa-star text-warning"></i>';
+            } else {
+                stars += '<i class="far fa-star text-warning"></i>';
+            }
+        }
+        
+        row.innerHTML = `
+            <td>${review.id}</td>
+            <td>${reviewer.username || '-'}</td>
+            <td>${reviewee.username || '-'}</td>
+            <td>${order.orderNumber || '-'}</td>
+            <td>${product.title || '-'}</td>
+            <td>${stars} ${review.rating}星</td>
+            <td>${review.content ? (review.content.length > 50 ? review.content.substring(0, 50) + '...' : review.content) : '-'}</td>
+            <td>
+                <span class="badge bg-${review.type === 'BUYER_TO_SELLER' ? 'info' : 'warning'}">
+                    ${review.type === 'BUYER_TO_SELLER' ? '买家评价卖家' : '卖家评价买家'}
+                </span>
+            </td>
+            <td>${formatDateTime(review.createdAt)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-info btn-action" onclick="viewReviewDetail(${review.id})" title="查看详情">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteReview(${review.id})" title="删除">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// 筛选评价
+function filterReviews() {
+    loadReviews(0);
+}
+
+// 查看评价详情
+function viewReviewDetail(reviewId) {
+    fetch(`${API_BASE_URL}/admin/reviews/${reviewId}`, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+    })
+    .then(handleApiResponse)
+    .then(data => {
+        if (data.success) {
+            const review = data.data;
+            currentReviewId = review.id;
+            
+            const order = review.order || {};
+            const product = order.product || {};
+            const reviewer = review.reviewer || {};
+            const reviewee = review.reviewee || {};
+            
+            // 生成星级显示
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                if (i < review.rating) {
+                    stars += '<i class="fas fa-star text-warning"></i>';
+                } else {
+                    stars += '<i class="far fa-star text-warning"></i>';
+                }
+            }
+            
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>评价信息</h5>
+                        <p><strong>评价ID:</strong> ${review.id}</p>
+                        <p><strong>评分:</strong> ${stars} ${review.rating}星</p>
+                        <p><strong>类型:</strong> 
+                            <span class="badge bg-${review.type === 'BUYER_TO_SELLER' ? 'info' : 'warning'}">
+                                ${review.type === 'BUYER_TO_SELLER' ? '买家评价卖家' : '卖家评价买家'}
+                            </span>
+                        </p>
+                        <p><strong>创建时间:</strong> ${formatDateTime(review.createdAt)}</p>
+                        ${review.updatedAt ? `<p><strong>更新时间:</strong> ${formatDateTime(review.updatedAt)}</p>` : ''}
+                    </div>
+                    <div class="col-md-6">
+                        <h5>评价内容</h5>
+                        <p>${review.content || '无评价内容'}</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h5>评价者信息</h5>
+                        <p><strong>用户名:</strong> ${reviewer.username || 'N/A'}</p>
+                        <p><strong>邮箱:</strong> ${reviewer.email || 'N/A'}</p>
+                        <p><strong>手机:</strong> ${reviewer.phone || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>被评价者信息</h5>
+                        <p><strong>用户名:</strong> ${reviewee.username || 'N/A'}</p>
+                        <p><strong>邮箱:</strong> ${reviewee.email || 'N/A'}</p>
+                        <p><strong>手机:</strong> ${reviewee.phone || 'N/A'}</p>
+                    </div>
+                </div>
+                ${order.id ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h5>关联订单信息</h5>
+                        <p><strong>订单号:</strong> ${order.orderNumber || 'N/A'}</p>
+                        <p><strong>商品:</strong> ${product.title || 'N/A'}</p>
+                        <p><strong>金额:</strong> ¥${order.amount || 'N/A'}</p>
+                        <p><strong>状态:</strong> <span class="badge bg-${getOrderStatusClass(order.status)}">${getOrderStatusText(order.status)}</span></p>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('reviewDetailContent').innerHTML = content;
+            const modal = new bootstrap.Modal(document.getElementById('reviewDetailModal'));
+            modal.show();
+        } else {
+            showErrorToast('获取评价详情失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching review detail:', error);
+        showErrorToast('网络错误，获取评价详情失败');
+    });
+}
+
+// 删除评价
+async function deleteReview(reviewId) {
+    if (!confirm('确定要删除这个评价吗？删除后无法恢复！')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/reviews/${reviewId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+        });
+        
+        if (response.ok) {
+            alert('评价删除成功！');
+            loadReviews(currentPage.reviews);
+        } else {
+            const result = await response.json();
+            alert('删除失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('删除评价失败:', error);
+        alert('删除失败，请重试');
+    }
+}
+
+// 从模态框删除评价
+function deleteReviewFromModal() {
+    if (currentReviewId) {
+        deleteReview(currentReviewId);
+        bootstrap.Modal.getInstance(document.getElementById('reviewDetailModal')).hide();
+    }
 }
 
 // 退出登录

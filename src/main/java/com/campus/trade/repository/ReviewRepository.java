@@ -20,6 +20,28 @@ import java.util.List;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     /**
+     * 获取所有评价ID（用于分页）
+     */
+    @Query("SELECT r.id FROM Review r ORDER BY r.createdAt DESC")
+    Page<Long> findAllReviewIds(Pageable pageable);
+    
+    /**
+     * 根据ID列表获取评价（带关联数据）
+     */
+    @Query("SELECT DISTINCT r FROM Review r " +
+           "LEFT JOIN FETCH r.order o " +
+           "LEFT JOIN FETCH o.product p " +
+           "LEFT JOIN FETCH p.seller ps " +
+           "LEFT JOIN FETCH p.buyer pb " +
+           "LEFT JOIN FETCH o.buyer ob " +
+           "LEFT JOIN FETCH o.seller os " +
+           "LEFT JOIN FETCH r.reviewer rr " +
+           "LEFT JOIN FETCH r.reviewee rv " +
+           "WHERE r.id IN :ids " +
+           "ORDER BY r.createdAt DESC")
+    List<Review> findByIdsWithDetails(@Param("ids") List<Long> ids);
+    
+    /**
      * 根据被评价者查找评价（带关联数据）
      */
     @EntityGraph(value = "Review.withDetails", type = EntityGraph.EntityGraphType.LOAD)
@@ -32,9 +54,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findByReviewer(User reviewer, Pageable pageable);
     
     /**
-     * 根据评价类型查找评价
+     * 根据评价类型查找评价（带关联数据）
      */
+    @EntityGraph(value = "Review.withDetails", type = EntityGraph.EntityGraphType.LOAD)
     Page<Review> findByType(ReviewType type, Pageable pageable);
+    
+    /**
+     * 根据评分查找评价（带关联数据）
+     */
+    @EntityGraph(value = "Review.withDetails", type = EntityGraph.EntityGraphType.LOAD)
+    Page<Review> findByRating(Integer rating, Pageable pageable);
     
     /**
      * 根据订单查找评价（带关联数据）

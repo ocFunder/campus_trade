@@ -8,22 +8,24 @@ import com.campus.trade.entity.Order;
 import com.campus.trade.entity.OrderStatus;
 import com.campus.trade.entity.Product;
 import com.campus.trade.entity.ProductStatus;
+import com.campus.trade.entity.Review;
+import com.campus.trade.entity.ReviewType;
 import com.campus.trade.entity.User;
 import com.campus.trade.entity.UserStatus;
 import com.campus.trade.repository.OrderRepository;
 import com.campus.trade.repository.ProductRepository;
 import com.campus.trade.repository.ReviewRepository;
 import com.campus.trade.repository.UserRepository;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 管理员服务类
@@ -309,5 +311,140 @@ public class AdminService {
         }
         
         return csv.toString();
+    }
+    
+    /**
+     * 获取所有评价
+     */
+    @Transactional(readOnly = true)
+    public Page<Review> getAllReviews(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        // 先获取评价ID列表（支持分页）
+        Page<Long> reviewIdsPage = reviewRepository.findAllReviewIds(pageable);
+        
+        if (reviewIdsPage.getContent().isEmpty()) {
+            return new PageImpl<>(new ArrayList<>(), pageable, 0);
+        }
+        
+        // 根据ID列表获取评价（带关联数据）
+        List<Review> reviews = reviewRepository.findByIdsWithDetails(reviewIdsPage.getContent());
+        
+        // 确保所有关联数据都被初始化（避免代理对象）
+        initializeReviewAssociations(reviews);
+        
+        // 创建Page对象
+        return new PageImpl<>(reviews, pageable, reviewIdsPage.getTotalElements());
+    }
+    
+    /**
+     * 根据类型获取评价
+     */
+    @Transactional(readOnly = true)
+    public Page<Review> getReviewsByType(ReviewType type, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Review> reviews = reviewRepository.findByType(type, pageable);
+        
+        // 确保所有关联数据都被初始化（避免代理对象）
+        initializeReviewAssociations(reviews.getContent());
+        
+        return reviews;
+    }
+    
+    /**
+     * 根据评分获取评价
+     */
+    @Transactional(readOnly = true)
+    public Page<Review> getReviewsByRating(Integer rating, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Review> reviews = reviewRepository.findByRating(rating, pageable);
+        
+        // 确保所有关联数据都被初始化（避免代理对象）
+        initializeReviewAssociations(reviews.getContent());
+        
+        return reviews;
+    }
+    
+    /**
+     * 初始化评价的关联数据
+     */
+    private void initializeReviewAssociations(List<Review> reviews) {
+        reviews.forEach(review -> {
+            try {
+                if (review.getOrder() != null) {
+                    Order order = review.getOrder();
+                    // 使用Hibernate.initialize强制初始化代理对象
+                    Hibernate.initialize(order);
+                    
+                    // 初始化Order的关联
+                    if (order.getProduct() != null) {
+                        Product product = order.getProduct();
+                        Hibernate.initialize(product);
+                        
+                        // 初始化Product的关联
+                        if (product.getSeller() != null) {
+                            Hibernate.initialize(product.getSeller());
+                            product.getSeller().getUsername();
+                        }
+                        if (product.getBuyer() != null) {
+                            Hibernate.initialize(product.getBuyer());
+                            product.getBuyer().getUsername();
+                        }
+                    }
+                    if (order.getBuyer() != null) {
+                        Hibernate.initialize(order.getBuyer());
+                        order.getBuyer().getUsername();
+                    }
+                    if (order.getSeller() != null) {
+                        Hibernate.initialize(order.getSeller());
+                        order.getSeller().getUsername();
+                    }
+                }
+                if (review.getReviewer() != null) {
+                    Hibernate.initialize(review.getReviewer());
+                    review.getReviewer().getUsername();
+                }
+                if (review.getReviewee() != null) {
+                    Hibernate.initialize(review.getReviewee());
+                    review.getReviewee().getUsername();
+                }
+            } catch (Exception e) {
+                // 忽略初始化错误，继续处理下一个评价
+                System.err.println("初始化评价关联数据失败: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * 获取单个评价详情
+     */
+    @Transactional(readOnly = true)
+    public Review getReviewById(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("评价不存在"));
+        
+        // 确保关联数据被加载
+        if (review.getOrder() != null) {
+            review.getOrder().getProduct();
+            review.getOrder().getBuyer();
+            review.getOrder().getSeller();
+        }
+        if (review.getReviewer() != null) {
+            review.getReviewer().getUsername();
+        }
+        if (review.getReviewee() != null) {
+            review.getReviewee().getUsername();
+        }
+        
+        return review;
+    }
+    
+    /**
+     * 删除评价
+     */
+    public void deleteReview(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("评价不存在"));
+        reviewRepository.delete(review);
     }
 }

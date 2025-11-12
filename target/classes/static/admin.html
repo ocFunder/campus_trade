@@ -128,6 +128,9 @@
                             <a class="nav-link" href="#" onclick="showOrders()">
                                 <i class="fas fa-shopping-cart me-2"></i>订单管理
                             </a>
+                            <a class="nav-link" href="#" onclick="showReviews()">
+                                <i class="fas fa-star me-2"></i>评价管理
+                            </a>
                             <a class="nav-link" href="#" onclick="showSystem()">
                                 <i class="fas fa-chart-line me-2"></i>系统统计
                             </a>
@@ -379,6 +382,60 @@
                         </div>
                     </div>
 
+                    <!-- 评价管理 -->
+                    <div id="reviews" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="fas fa-star me-2"></i>评价管理</h2>
+                            <div class="d-flex">
+                                <select class="form-select me-2" id="reviewTypeFilter">
+                                    <option value="">所有类型</option>
+                                    <option value="BUYER_TO_SELLER">买家评价卖家</option>
+                                    <option value="SELLER_TO_BUYER">卖家评价买家</option>
+                                </select>
+                                <select class="form-select me-2" id="reviewRatingFilter">
+                                    <option value="">所有评分</option>
+                                    <option value="5">5星</option>
+                                    <option value="4">4星</option>
+                                    <option value="3">3星</option>
+                                    <option value="2">2星</option>
+                                    <option value="1">1星</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="filterReviews()">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>评价者</th>
+                                            <th>被评价者</th>
+                                            <th>订单号</th>
+                                            <th>商品</th>
+                                            <th>评分</th>
+                                            <th>评价内容</th>
+                                            <th>类型</th>
+                                            <th>创建时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reviewsTableBody">
+                                        <!-- 评价数据将通过JavaScript动态加载 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav>
+                                <ul class="pagination justify-content-center" id="reviewsPagination">
+                                    <!-- 分页将通过JavaScript动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
                     <!-- 系统统计 -->
                     <div id="system" class="content-section" style="display: none;">
                         <h2 class="mb-4">
@@ -564,6 +621,27 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 评价详情模态框 -->
+    <div class="modal fade" id="reviewDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">评价详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="reviewDetailContent">
+                    <!-- 评价详情内容将在这里动态加载 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteReviewFromModal()" id="deleteReviewBtn">
+                        <i class="fas fa-trash me-1"></i>删除评价
+                    </button>
                 </div>
             </div>
         </div>

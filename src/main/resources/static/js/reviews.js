@@ -295,7 +295,9 @@ function createReviewCard(review) {
                         <p class="text-muted mb-2">
                             <small>${app.formatDate(review.createdAt)}</small>
                         </p>
-
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="viewReviewDetail(${review.id})">
+                            <i class="fas fa-eye me-1"></i>查看详情
+                        </button>
                     </div>
                 </div>
             </div>

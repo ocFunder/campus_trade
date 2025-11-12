@@ -7,6 +7,8 @@ import com.campus.trade.entity.Order;
 import com.campus.trade.entity.OrderStatus;
 import com.campus.trade.entity.Product;
 import com.campus.trade.entity.ProductStatus;
+import com.campus.trade.entity.Review;
+import com.campus.trade.entity.ReviewType;
 import com.campus.trade.entity.User;
 import com.campus.trade.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -295,6 +297,81 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("导出订单数据失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 获取所有评价
+     */
+    @GetMapping("/reviews")
+    public ResponseEntity<?> getAllReviews(@RequestParam(defaultValue = "0") int page,
+                                          @RequestParam(defaultValue = "20") int size) {
+        try {
+            Page<Review> reviews = adminService.getAllReviews(page, size);
+            return ResponseEntity.ok(ApiResponse.success("获取评价列表成功", reviews));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("获取评价列表失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 根据类型获取评价
+     */
+    @GetMapping("/reviews/type/{type}")
+    public ResponseEntity<?> getReviewsByType(@PathVariable ReviewType type,
+                                              @RequestParam(defaultValue = "0") int page,
+                                              @RequestParam(defaultValue = "20") int size) {
+        try {
+            Page<Review> reviews = adminService.getReviewsByType(type, page, size);
+            return ResponseEntity.ok(ApiResponse.success("获取评价列表成功", reviews));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("获取评价列表失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 根据评分获取评价
+     */
+    @GetMapping("/reviews/rating/{rating}")
+    public ResponseEntity<?> getReviewsByRating(@PathVariable Integer rating,
+                                                @RequestParam(defaultValue = "0") int page,
+                                                @RequestParam(defaultValue = "20") int size) {
+        try {
+            Page<Review> reviews = adminService.getReviewsByRating(rating, page, size);
+            return ResponseEntity.ok(ApiResponse.success("获取评价列表成功", reviews));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("获取评价列表失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 获取单个评价详情
+     */
+    @GetMapping("/reviews/{reviewId}")
+    public ResponseEntity<?> getReviewById(@PathVariable Long reviewId) {
+        try {
+            Review review = adminService.getReviewById(reviewId);
+            return ResponseEntity.ok(ApiResponse.success("获取评价详情成功", review));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("获取评价详情失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 删除评价
+     */
+    @DeleteMapping("/reviews/{reviewId}")
+    public ResponseEntity<?> deleteReview(@PathVariable Long reviewId) {
+        try {
+            adminService.deleteReview(reviewId);
+            return ResponseEntity.ok(ApiResponse.success("删除评价成功"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("删除评价失败: " + e.getMessage()));
         }
     }
 }

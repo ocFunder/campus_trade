@@ -70,6 +70,12 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
+        <!-- Jackson Hibernate Module -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-hibernate5</artifactId>
+        </dependency>
+
         <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
