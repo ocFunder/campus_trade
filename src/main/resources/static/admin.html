@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - 校园二手交易平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 4px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        .stats-icon.users { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stats-icon.products { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stats-icon.orders { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stats-icon.revenue { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .admin-header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-inactive { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-completed { background: #d1ecf1; color: #0c5460; }
+        .btn-action {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-store me-2"></i>校园二手交易平台
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>
+                        <span id="adminUsername">管理员</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/profile.html"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h5 class="text-center mb-4">
+                            <i class="fas fa-cogs me-2"></i>后台管理
+                        </h5>
+                        <nav class="nav flex-column">
+                            <a class="nav-link active" href="#" onclick="showDashboard()">
+                                <i class="fas fa-tachometer-alt me-2"></i>仪表板
+                            </a>
+                            <a class="nav-link" href="#" onclick="showUsers()">
+                                <i class="fas fa-users me-2"></i>用户管理
+                            </a>
+                            <a class="nav-link" href="#" onclick="showProducts()">
+                                <i class="fas fa-box me-2"></i>商品管理
+                            </a>
+                            <a class="nav-link" href="#" onclick="showOrders()">
+                                <i class="fas fa-shopping-cart me-2"></i>订单管理
+                            </a>
+                            <a class="nav-link" href="#" onclick="showSystem()">
+                                <i class="fas fa-chart-line me-2"></i>系统统计
+                            </a>
+                            <a class="nav-link" href="#" onclick="showSystemSettings()">
+                                <i class="fas fa-cog me-2"></i>系统设置
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-9 col-lg-10">
+                <div class="main-content p-4">
+                    <!-- 仪表板 -->
+                    <div id="dashboard" class="content-section">
+                        <h2 class="mb-4">
+                            <i class="fas fa-tachometer-alt me-2"></i>仪表板
+                        </h2>
+                        
+                        <!-- 统计卡片 -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="stats-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stats-icon users me-3">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalUsers">0</h3>
+                                            <p class="text-muted mb-0">总用户数</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stats-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stats-icon products me-3">
+                                            <i class="fas fa-box"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalProducts">0</h3>
+                                            <p class="text-muted mb-0">总商品数</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stats-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stats-icon orders me-3">
+                                            <i class="fas fa-shopping-cart"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalOrders">0</h3>
+                                            <p class="text-muted mb-0">总订单数</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stats-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stats-icon revenue me-3">
+                                            <i class="fas fa-yen-sign"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalRevenue">¥0</h3>
+                                            <p class="text-muted mb-0">总交易额</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 快速统计 -->
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">活跃用户</h5>
+                                    <h2 class="text-primary" id="activeUsers">0</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">活跃商品</h5>
+                                    <h2 class="text-success" id="activeProducts">0</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">待处理订单</h5>
+                                    <h2 class="text-warning" id="pendingOrders">0</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 数据导出 -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">数据导出</h5>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-primary" onclick="exportData('users')">
+                                            <i class="fas fa-download me-2"></i>导出用户数据
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="exportData('products')">
+                                            <i class="fas fa-download me-2"></i>导出商品数据
+                                        </button>
+                                        <button class="btn btn-outline-warning" onclick="exportData('orders')">
+                                            <i class="fas fa-download me-2"></i>导出订单数据
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 用户管理 -->
+                    <div id="users" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="fas fa-users me-2"></i>用户管理</h2>
+                            <div class="d-flex">
+                                <input type="text" class="form-control me-2" id="userSearch" placeholder="搜索用户...">
+                                <button class="btn btn-primary" onclick="searchUsers()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>用户名</th>
+                                            <th>真实姓名</th>
+                                            <th>邮箱</th>
+                                            <th>角色</th>
+                                            <th>状态</th>
+                                            <th>注册时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTableBody">
+                                        <!-- 用户数据将通过JavaScript动态加载 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav>
+                                <ul class="pagination justify-content-center" id="usersPagination">
+                                    <!-- 分页将通过JavaScript动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- 商品管理 -->
+                    <div id="products" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="fas fa-box me-2"></i>商品管理</h2>
+                            <div class="d-flex">
+                                <select class="form-select me-2" id="productStatusFilter">
+                                    <option value="">所有状态</option>
+                                    <option value="ACTIVE">活跃</option>
+                                    <option value="SOLD">已售出</option>
+                                    <option value="DELETED">已删除</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="filterProducts()">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>商品名称</th>
+                                            <th>价格</th>
+                                            <th>分类</th>
+                                            <th>卖家</th>
+                                            <th>状态</th>
+                                            <th>发布时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="productsTableBody">
+                                        <!-- 商品数据将通过JavaScript动态加载 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav>
+                                <ul class="pagination justify-content-center" id="productsPagination">
+                                    <!-- 分页将通过JavaScript动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- 订单管理 -->
+                    <div id="orders" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="fas fa-shopping-cart me-2"></i>订单管理</h2>
+                            <div class="d-flex">
+                                <select class="form-select me-2" id="orderStatusFilter">
+                                    <option value="">所有状态</option>
+                                    <option value="PENDING">待支付</option>
+                                    <option value="PAID">已支付</option>
+                                    <option value="SHIPPED">已发货</option>
+                                    <option value="COMPLETED">已完成</option>
+                                    <option value="CANCELLED">已取消</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="filterOrders()">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>商品</th>
+                                            <th>买家</th>
+                                            <th>卖家</th>
+                                            <th>金额</th>
+                                            <th>状态</th>
+                                            <th>创建时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ordersTableBody">
+                                        <!-- 订单数据将通过JavaScript动态加载 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav>
+                                <ul class="pagination justify-content-center" id="ordersPagination">
+                                    <!-- 分页将通过JavaScript动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- 系统统计 -->
+                    <div id="system" class="content-section" style="display: none;">
+                        <h2 class="mb-4">
+                            <i class="fas fa-chart-line me-2"></i>系统统计
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">最近7天订单</h5>
+                                    <h2 class="text-primary" id="recentOrders">0</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">新注册用户</h5>
+                                    <h2 class="text-success" id="newUsers">0</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">新发布商品</h5>
+                                    <h2 class="text-info" id="newProducts">0</h2>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="stats-card">
+                                    <h5 class="mb-3">系统状态</h5>
+                                    <h2 class="text-success">正常</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户编辑模态框 -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <input type="hidden" id="editUserId">
+                        <div class="mb-3">
+                            <label class="form-label">真实姓名</label>
+                            <input type="text" class="form-control" id="editRealName">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">手机号</label>
+                            <input type="text" class="form-control" id="editPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">角色</label>
+                            <select class="form-select" id="editRole">
+                                <option value="USER">普通用户</option>
+                                <option value="MODERATOR">版主</option>
+                                <option value="ADMIN">管理员</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">状态</label>
+                            <select class="form-select" id="editStatus">
+                                <option value="ACTIVE">活跃</option>
+                                <option value="INACTIVE">非活跃</option>
+                                <option value="DELETED">已删除</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUser()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户编辑模态框 -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm">
+                        <input type="hidden" id="editUserId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">用户名</label>
+                                    <input type="text" class="form-control" id="editUsername" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">邮箱</label>
+                                    <input type="email" class="form-control" id="editEmail">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">真实姓名</label>
+                                    <input type="text" class="form-control" id="editRealName">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">手机号</label>
+                                    <input type="tel" class="form-control" id="editPhone">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">角色</label>
+                                    <select class="form-select" id="editRole">
+                                        <option value="USER">普通用户</option>
+                                        <option value="MODERATOR">版主</option>
+                                        <option value="ADMIN">管理员</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">状态</label>
+                                    <select class="form-select" id="editStatus">
+                                        <option value="ACTIVE">活跃</option>
+                                        <option value="INACTIVE">非活跃</option>
+                                        <option value="DELETED">已删除</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUserEdit()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品详情模态框 -->
+    <div class="modal fade" id="productDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">商品详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="productDetailContent">
+                    <!-- 商品详情内容将在这里动态加载 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单详情模态框 -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">订单详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="orderDetailContent">
+                    <!-- 订单详情内容将在这里动态加载 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统设置模态框 -->
+    <div class="modal fade" id="systemSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">系统设置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="systemSettingsForm">
+                        <div class="mb-3">
+                            <label class="form-label">系统名称</label>
+                            <input type="text" class="form-control" id="systemName" value="校园二手交易平台">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">系统描述</label>
+                            <textarea class="form-control" id="systemDescription" rows="3">为校园用户提供便捷的二手物品交易服务</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">维护模式</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="maintenanceMode">
+                                <label class="form-check-label" for="maintenanceMode">
+                                    启用维护模式（用户将无法访问系统）
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">新用户注册</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="allowRegistration" checked>
+                                <label class="form-check-label" for="allowRegistration">
+                                    允许新用户注册
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSystemSettings()">保存设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
