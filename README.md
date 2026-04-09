@@ -313,11 +313,6 @@ A: 参考部署指南，建议使用Docker部署。
 
 本项目采用MIT许可证，详情请参阅[LICENSE](LICENSE)文件。
 
-## 联系方式
-
-- 项目维护者：[Your Name]
-- 邮箱：[your.email@example.com]
-- 项目地址：[GitHub Repository URL]
 
 ## 更新日志
 
